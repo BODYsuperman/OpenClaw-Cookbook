@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "xiucheng-self-improving-agent": {
+      "version": "1.0.0",
+      "installedAt": 1773139564299
+    },
+    "openclaw-tavily-search": {
+      "version": "0.1.0",
+      "installedAt": 1773140587789
+    },
+    "skill-vetter": {
+      "version": "1.0.0",
+      "installedAt": 1773289565705
+    },
+    "openclaw-shield": {
+      "version": "1.0.3",
+      "installedAt": 1773392951380
+    },
+    "openclaw-ops-guardrails": {
+      "version": "0.1.1",
+      "installedAt": 1773393128663
+    },
+    "document-summary": {
+      "version": "1.1.1",
+      "installedAt": 1773394213211
+    }
+  }
+}
