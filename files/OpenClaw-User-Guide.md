@@ -2,7 +2,7 @@
 
 > Integrating the best content from the Orange Book, Datawhale tutorials, APIFox guides, and more
 > 
-> Version: v1.0 | Last Updated: 2026-03-16
+> Version: v1.1 | Last Updated: 2026-03-17
 
 ---
 
@@ -13,11 +13,12 @@
 3. [Installation & Deployment](#3-installation--deployment)
 4. [Channel Integration](#4-channel-integration)
 5. [Configuration Guide](#5-configuration-guide)
-6. [Skills System](#6-skills-system)
-7. [Memory System](#7-memory-system)
-8. [Scheduled Tasks](#8-scheduled-tasks)
-9. [Common Commands](#9-common-commands)
-10. [Troubleshooting](#10-troubleshooting)
+6. [Multi-Agent Configuration](#6-multi-agent-configuration)
+7. [Skills System](#7-skills-system)
+8. [Memory System](#8-memory-system)
+9. [Scheduled Tasks](#9-scheduled-tasks)
+10. [Common Commands](#10-common-commands)
+11. [Troubleshooting](#11-troubleshooting)
 
 ---
 
@@ -42,6 +43,7 @@ OpenClaw is an **open-source, self-hosted AI Agent system** that transforms AI f
 - ✅ **Skill Extension**: Infinitely expand capabilities through the Skills system
 - ✅ **Proactive Work**: Scheduled tasks, heartbeat checks, automatic reminders
 - ✅ **Local Data**: All data stored on your device
+- ✅ **Multi-Agent Collaboration**: Dedicated agents for different tasks
 
 ### 1.3 Architecture Overview
 
@@ -361,16 +363,162 @@ Edit `~/.openclaw/openclaw.json`:
 
 ---
 
-## 6. Skills System
+## 6. Multi-Agent Configuration
 
-### 6.1 What are Skills?
+### 6.1 What is Multi-Agent?
+
+OpenClaw supports running multiple independent Agent instances, where each Agent can:
+- Use different model configurations
+- Have independent workspaces and memory
+- Focus on specific types of tasks
+- Configure Skills and tools independently
+
+### 6.2 Built-in Agent Types
+
+| Agent | Purpose | Recommended Model |
+|-------|------|----------|
+| **main** | Main conversation Agent, handles daily tasks | qwen3.5-plus |
+| **chat** | Pure chat Agent, casual conversation | qwen3.5-plus |
+| **coding** | Programming Agent, code generation/review | qwen3-coder-plus / glm-5 |
+| **analysis** | Data analysis Agent | qwen3.5-plus |
+
+### 6.3 Creating Custom Agents
+
+```bash
+# Create new Agent
+openclaw agents create my-agent
+
+# Set dedicated model
+openclaw agents config my-agent --model glm-5
+
+# Configure workspace
+openclaw agents workspace my-agent --path ~/projects/my-agent
+
+# Start Agent
+openclaw agents start my-agent
+```
+
+### 6.4 Assign Agents to Different Tasks
+
+| Task Type | Recommended Agent | Invocation |
+|----------|-----------|----------|
+| Daily conversation, Q&A | main | Default |
+| Writing code, Debugging | coding | `/agent coding` |
+| Data analysis, Reports | analysis | `/agent analysis` |
+| Creative writing | chat | `/agent chat` |
+| Domain-specific tasks | Custom Agent | `/agent <name>` |
+
+### 6.5 Agent Routing Configuration
+
+**Method 1: Command Prefix**
+```
+/agent coding Help me write a Python script
+/agent analysis Analyze this data
+```
+
+**Method 2: Automatic Routing (Keyword-based)**
+```json
+{
+  "routing": {
+    "rules": [
+      {
+        "keywords": ["code", "programming", "python", "javascript"],
+        "agent": "coding"
+      },
+      {
+        "keywords": ["analyze", "data", "chart"],
+        "agent": "analysis"
+      }
+    ]
+  }
+}
+```
+
+**Method 3: Channel Binding**
+```json
+{
+  "channels": {
+    "telegram": {
+      "defaultAgent": "main"
+    },
+    "discord": {
+      "defaultAgent": "chat"
+    }
+  }
+}
+```
+
+### 6.6 Multi-Agent Best Practices
+
+**✅ Recommended:**
+- Create dedicated Agents for high-frequency tasks
+- Use separate Agents for programming (avoid context pollution)
+- Create independent Agent instances for different projects
+- Regularly clean up inactive Agents
+
+**❌ Avoid:**
+- Creating too many Agents (recommended ≤5)
+- All Agents using the same model (wastes resources)
+- Ignoring memory isolation between Agents
+
+### 6.7 View and Manage Agents
+
+```bash
+# List all Agents
+openclaw agents list
+
+# Check Agent status
+openclaw agents status my-agent
+
+# View Agent configuration
+openclaw agents config my-agent --show
+
+# Stop Agent
+openclaw agents stop my-agent
+
+# Delete Agent
+openclaw agents delete my-agent
+```
+
+### 6.8 Multi-Agent Architecture Example
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    User Message                          │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│              Routing Layer (distributes by rules)        │
+│   Keyword Matching / Command Prefix / Channel Binding    │
+└──────────┬──────────────┬──────────────┬────────────────┘
+           │              │              │
+           ▼              ▼              ▼
+    ┌──────────┐   ┌──────────┐   ┌──────────┐
+    │   main   │   │  coding  │   │ analysis │
+    │  Agent   │   │  Agent   │   │  Agent   │
+    └────┬─────┘   └────┬─────┘   └────┬─────┘
+         │              │              │
+         ▼              ▼              ▼
+    ┌──────────┐   ┌──────────┐   ┌──────────┐
+    │ General  │   │  Code    │   │   Data   │
+    │  Memory  │   │  Skills  │   │  Tools   │
+    │ Qwen3.5  │   │  Codex   │   │  Pandas  │
+    └──────────┘   └──────────┘   └──────────┘
+```
+
+---
+
+## 7. Skills System
+
+### 7.1 What are Skills?
 
 Skills are OpenClaw's plugin system, enabling AI to:
 - Access external APIs (weather, news, stocks)
 - Operate local resources (files, cameras)
 - Execute specific tasks (GitHub, calendar, email)
 
-### 6.2 Installing Skills
+### 7.2 Installing Skills
 
 ```bash
 # Install from ClawHub
@@ -386,7 +534,7 @@ openclaw skill list
 openclaw skill update
 ```
 
-### 6.3 Popular Skills
+### 7.3 Popular Skills
 
 | Skill | Function | Install Command |
 |-------|------|----------|
@@ -395,7 +543,7 @@ openclaw skill update
 | news-aggregator | News aggregation | `skill install news-aggregator` |
 | pinchtab-browser | Browser automation | `skill install pinchtab-browser` |
 
-### 6.4 Creating Custom Skills
+### 7.4 Creating Custom Skills
 
 ```bash
 # Create Skill directory
@@ -415,9 +563,9 @@ EOF
 
 ---
 
-## 7. Memory System
+## 8. Memory System
 
-### 7.1 Memory Types
+### 8.1 Memory Types
 
 | Type | File | Description |
 |------|------|------|
@@ -427,7 +575,7 @@ EOF
 | User | `USER.md` | User information |
 | Soul | `SOUL.md` | Behavioral guidelines |
 
-### 7.2 Memory File Locations
+### 8.2 Memory File Locations
 
 ```
 ~/.openclaw/workspace-main/
@@ -443,7 +591,7 @@ EOF
     └── 2026-03-15.md
 ```
 
-### 7.3 Search Memory
+### 8.3 Search Memory
 
 ```bash
 # Semantic search
@@ -453,7 +601,7 @@ openclaw memory search "project mentioned last time"
 openclaw memory search --date 2026-03-15 "meeting"
 ```
 
-### 7.4 Memory Maintenance
+### 8.4 Memory Maintenance
 
 Recommended to review MEMORY.md regularly (weekly):
 - Remove outdated information
@@ -462,9 +610,9 @@ Recommended to review MEMORY.md regularly (weekly):
 
 ---
 
-## 8. Scheduled Tasks
+## 9. Scheduled Tasks
 
-### 8.1 Cron Basics
+### 9.1 Cron Basics
 
 ```bash
 # Add scheduled task
@@ -480,7 +628,7 @@ openclaw cron run <job-id>
 openclaw cron remove <job-id>
 ```
 
-### 8.2 Cron Expressions
+### 9.2 Cron Expressions
 
 | Expression | Description |
 |--------|------|
@@ -489,7 +637,7 @@ openclaw cron remove <job-id>
 | `*/30 * * * *` | Every 30 minutes |
 | `0 0 1 * *` | 1st of each month at 0:00 |
 
-### 8.3 Heartbeat Tasks
+### 9.3 Heartbeat Tasks
 
 Edit `HEARTBEAT.md`:
 
@@ -502,7 +650,7 @@ Edit `HEARTBEAT.md`:
 - [ ] Review memory files (weekly)
 ```
 
-### 8.4 Practical Cron Examples
+### 9.4 Practical Cron Examples
 
 **Daily News Briefing:**
 ```bash
@@ -522,9 +670,9 @@ openclaw cron add \
 
 ---
 
-## 9. Common Commands
+## 10. Common Commands
 
-### 9.1 Gateway Management
+### 10.1 Gateway Management
 
 ```bash
 openclaw gateway start      # Start
@@ -535,7 +683,7 @@ openclaw gateway install    # Install as system service
 openclaw gateway uninstall  # Uninstall service
 ```
 
-### 9.2 Configuration Management
+### 10.2 Configuration Management
 
 ```bash
 openclaw onboard            # Initial setup wizard
@@ -546,7 +694,7 @@ openclaw dashboard          # Open web dashboard
 openclaw tui                # Terminal interface
 ```
 
-### 9.3 Model Management
+### 10.3 Model Management
 
 ```bash
 openclaw models status      # Model status
@@ -554,7 +702,7 @@ openclaw models list        # List models
 openclaw models add         # Add model
 ```
 
-### 9.4 Channel Management
+### 10.4 Channel Management
 
 ```bash
 openclaw channels list      # List channels
@@ -562,7 +710,18 @@ openclaw channels add       # Add channel
 openclaw channels remove    # Remove channel
 ```
 
-### 9.5 Memory Operations
+### 10.5 Agent Management
+
+```bash
+openclaw agents list            # List Agents
+openclaw agents create <name>   # Create Agent
+openclaw agents config <name>   # Configure Agent
+openclaw agents start <name>    # Start Agent
+openclaw agents stop <name>     # Stop Agent
+openclaw agents delete <name>   # Delete Agent
+```
+
+### 10.6 Memory Operations
 
 ```bash
 openclaw memory search <query>   # Search memory
@@ -570,7 +729,7 @@ openclaw memory list             # List memory files
 openclaw memory edit             # Edit memory
 ```
 
-### 9.6 Session Management
+### 10.7 Session Management
 
 ```bash
 openclaw sessions list           # List sessions
@@ -580,9 +739,9 @@ openclaw sessions send           # Send message to session
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
-### 10.1 Common Issues
+### 11.1 Common Issues
 
 **Issue 1: `openclaw: command not found`**
 
@@ -638,7 +797,7 @@ curl -H "Authorization: Bearer YOUR_API_KEY" \
 ping api.example.com
 ```
 
-### 10.2 Viewing Logs
+### 11.2 Viewing Logs
 
 ```bash
 # Gateway logs
@@ -652,7 +811,7 @@ journalctl --user -u openclaw-gateway.service \
   --since "2026-03-16 10:00:00" --until "2026-03-16 12:00:00"
 ```
 
-### 10.3 Diagnostic Commands
+### 11.3 Diagnostic Commands
 
 ```bash
 # Full diagnostics
@@ -665,7 +824,7 @@ openclaw status
 openclaw config list
 ```
 
-### 10.4 Reset & Recovery
+### 11.4 Reset & Recovery
 
 ```bash
 # Reset configuration (use with caution)
@@ -695,9 +854,9 @@ rm -rf ~/.openclaw/cron
 
 ### B. Version Information
 
-- Document Version: v1.0
+- Document Version: v1.1
 - Applicable OpenClaw Version: v2026.3.11+
-- Last Updated: 2026-03-16
+- Last Updated: 2026-03-17
 
 ### C. Contributors
 
